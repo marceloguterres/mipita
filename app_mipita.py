@@ -20,35 +20,26 @@ import streamlit as st
 
 
 
-
-
-list_br = ['mipita_br','A_br', 'L_br', 'Af_br', 'Lf_br', 'multiplicadores_br', 'multiplicadores_ta_br' ]
+list_br = ['multiplicadores_br', 'multiplicadores_ta_br' ]
 
 
 def table_br(parametro_br):
-    if parametro_br == 'mipita_br':
-        table = st.table(mipita_br)
-    elif parametro_br == 'A_br':
-        table = st.table(A_br)
-    elif parametro_br == 'L_br':
-        table = st.table(L_br)
-    elif parametro_br == 'Af_br':
-        table = st.table(Af_br)
-    elif parametro_br == 'Lf_br':
-        table = st.table(Lf_br)
-    elif parametro_br == 'multiplicadores_br':
-          table = st.table(multiplicadores_br)
-    elif parametro_br == 'multiplicadores_ta_br':
-          table = st.table(multiplicadores_ta_br)
-    return table 
+    if parametro_br == 'multiplicadores_br':
+        table = multiplicadores_br
+    else:
+        table = multiplicadores_ta_br
+    return table
+
+@st.cache
+def convert_df(df):
+   return df.to_csv().encode('utf-8')
 
 
 #-----------------------------------------------------------------------------------
 # -- Set page config
 
 st.apptitle = 'Projeto IMPACTO'
-st.title('MIPITA')
-st.markdown("""A matriz de insumo-produtos brasileira""")
+st.title('Análise Insumo Produto Nacional')
 
 
 
@@ -63,8 +54,7 @@ with st.sidebar:
     code_municipio= st.text_input('Código IBGE do Município?')
         
     st.sidebar.markdown('## MIPITA')
-    parametro_br = st.sidebar.selectbox('Brasil', list_br)
-
+    tx_demanda_ta = st.number_input('Variaao da demanda?')
 
 
 
@@ -83,29 +73,68 @@ multiplicadores_br    = nereus.multiplicadores
 multiplicadores_ta_br = nereus.multiplicadores['5100'] 
 
 demanda_br = nereus.mipita.loc['5100']['total_produtos']
+demanda_ta = multiplicadores_br * demanda_br * tx_demanda_ta * 1
 
 
-table_br(parametro_br)
+csv = convert_df(mipita_br)
+st.download_button("Press to Download Matriz MIPITA BR", 
+                   csv,"mipita_br.csv", 
+                   "text/csv", 
+                   key='download-csv')
 
-st.title('Regionalização da MIP brasileira')
+csv = convert_df(A_br)
+st.download_button("Press to Download Matriz A", 
+                   csv,"A_br.csv", 
+                   "text/csv", 
+                   key='download-csv')
 
-with st.beta_expander("Veja nota informativa sobre a Regionalização da MIP brasileira:"):
-    st.markdown("""- A matriz de insumo-produtos é um modelo estrutural de uma economia, 
-ela retrata o total das transações entre os setores intermediários durante 
-o período de um ano, medidas pelo valor transacionado. 
-A regionalização consiste em obter modelos derivados do modelo nacional para territórios 
-contidos no país. Para tanto, diferentes premissas e metodologias podem ser adotadas,
-dependendo dos dados disponíveis e dos objetivos da análise.
-                    
-- Para o nosso problema, começamos com os modelos de região única 
-(modelo regional simples). Estes focalizam a estrutura produtiva de uma 
-determinada região e os impactos que ocorrem nesaa estrutura a partir de 
-choques de demanda. O modelo de região única não captura os efeitos
-transbordados para o restante do país. Neste sentido, por exemplo, 
-aos efeitos operação de um aeroporto em uma determinada região serão 
-medidos apenas para a própria região. Os efeitos causados fora dessa região, 
-mesmo que existam, são ignorados. O modelo regional simples funciona, assim, 
-como um *building bloc* para os passos subsequentes de sofisticação da modelagem.""")
- 
+csv = convert_df(L_br)
+st.download_button("Press to Download Matriz L", 
+                   csv,"L_br.csv", 
+                   "text/csv", 
+                   key='download-csv')      
+
+
+csv = convert_df(Af_br)
+st.download_button("Press to Download Matriz Af", 
+                   csv,"Af_br.csv", 
+                   "text/csv", 
+                   key='download-csv')   
+
+csv = convert_df(Lf_br)
+st.download_button("Press to Download Matriz Lf ", 
+                   csv,"Lf_br.csv", 
+                   "text/csv", 
+                   key='download-csv')
+
+
+csv = convert_df(multiplicadores_br )
+st.download_button("Press to Download multiplicadores br ", 
+                   csv,"multiplicadores_br .csv", 
+                   "text/csv", 
+                   key='download-csv')
+
+
+csv = convert_df(multiplicadores_ta_br)
+st.download_button("Press to Download multiplicadores TA", 
+                   csv,"multiplicadores_ta_br.csv", 
+                   "text/csv", 
+                   key='download-csv')
+
+st.title('Cálculo de impacto econômico')      
+
+st.markdown("""Use o menu de inputs para indicar a taxa de variação da demanda 
+ por Transporte Aéreo""")
+
+
+st.subheader('Multiplicadores Transporte Aéreo BR:')
+st.table(multiplicadores_ta_br)
+
+
+st.subheader('Variação na Demanda por Transporte Aéreo no Brasil:')
+st.write(demanda_br)
+
+
+
 
 
