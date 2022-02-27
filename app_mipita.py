@@ -91,7 +91,7 @@ st.title('Regionalização da MIP brasileira')
 
 with st.beta_expander("Veja nota informativa sobre a Regionalização da MIP brasileira:"):
     st.markdown("""- A matriz de insumo-produtos é um modelo estrutural de uma economia, 
- ela retrata o total das transações entre os setores intermediários durante 
+ela retrata o total das transações entre os setores intermediários durante 
 o período de um ano, medidas pelo valor transacionado. 
 A regionalização consiste em obter modelos derivados do modelo nacional para territórios 
 contidos no país. Para tanto, diferentes premissas e metodologias podem ser adotadas,
