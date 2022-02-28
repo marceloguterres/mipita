@@ -143,13 +143,17 @@ st.download_button("Press to Download multiplicadores TA",
 #=============================================================================
 
 
-st.title('Cálculo do impacto econômico')      
+st.subheader('🎯 Cálculo do impacto econômico')      
 
 st.markdown("""Use o menu de inputs para indicar a taxa de variação da demanda 
 por Transporte Aéreo""")
 
 
-st.subheader('Multiplicadores Transporte Aéreo BR:')
+"""
+📊 **Multiplicadores Transporte Aéreo BR:**
+"""
+
+
 with st.expander("Veja nota informativa sobre os multiplicadores:"):
      st.markdown("""Os multiplicadoes são medidas sintéticas obtidas da Matriz 
 L e da Matriz L fechada (que modela os impactos diretos+indiretos+induzidos ao 
@@ -169,20 +173,25 @@ incorporar o trabalho como mais um setor produtivo;
      
 st.table(multiplicadores_ta_br)
 
-
-st.subheader('Valor total da demanda por transporte aéreo:')
-st.write("R$ milhões/ano")
+"""
+🎯 **Valor total da demanda por transporte aéreo** (R$ milhões/ano):
+"""
 st.write(demanda_ta_br)
 
 
-st.subheader('Impactos estimados pelos multiplicadores:')
+"""
+🎯 **Impactos estimados pelos multiplicadores:**
+"""
+
 with st.expander("Veja nota informativa dos impactos estimados pelos multiplicadores:"):
      st.markdown("""Referem-se à alteração de 1 unidade na demanda agregada total
 para encontrar os efeitos no conjunto da economia basta multiplicar pela 
 quantidade de unidades perdidas ou ganhas nessa demanda.""")
 st.table(impactos_ta_br)
 
-
+"""
+---
+"""
 #=============================================================================
 # Análise Insumo Produto Regionalizada (xx)
 #=============================================================================
@@ -235,8 +244,9 @@ st.download_button("Press to Download Matriz A REG",
                    key='download-csv')
 
 
-
-st.subheader('Os coeficientes locacionais:')
+"""
+📊 **Os coeficientes locacionais**:
+"""
 with st.expander("Veja nota informativa dos coeficientes locacionais:"):
      st.markdown("""O processo de regionalização envolver obter uma 
                  estimativa da estrutura produtiva de região alvo.
@@ -251,7 +261,10 @@ relação ao todo nacional.""")
 st.table(qL)
 
 
-st.subheader('O atributo propT:')
+"""
+🔍 **O atributo propT**:
+"""
+
 with st.expander("Veja nota informativa do atributo propT:"):
      st.markdown("""Enquanto o coeficiente locacional estima as proporções
                  do lado das atividades de produção o atributo .propT 
@@ -259,14 +272,24 @@ with st.expander("Veja nota informativa do atributo propT:"):
                  demanda final.""")
 st.write(propT)
 
-st.subheader('Principais compradores do setor 5100:')
+
+
+
+"""
+👀 **Principais compradores do setor 5100**:
+"""
 st.table(compradores_xx)
 
-st.subheader('Principais forncedores do setor 5100:')
+
+"""
+👀 **Principais forncedores do setor 5100**:
+"""
 st.table(fornecedores_xx)
 
 
-st.subheader('O atributo ajuste:')
+"""
+⛳ **'O atributo ajuste**:
+"""
 with st.expander("Veja nota informativa do atributo ajuste:"):
      st.markdown("""O atributo ajuste contém os parâmetros resultantes 
 da avaliação da qualidade do ajuste. A partir da MIP 
@@ -284,5 +307,100 @@ compatibizar as 68 atividades da MIP com esses 3 setores.""")
 st.write(ajuste_xx)
 
 
+
+#=============================================================================
+# Modelo simplificado para entender e estudar o comportamento do modelo 
+# interregional de ISARD (yy)
+#=============================================================================
+# A matriz A_yy é a matriz Brasil menos a regionalizada para xx
+
+
+mipita_yy = nereus.extrair_mipita()
+mipita_yy.preparar_qL([code_municipio], exceto=True) 
+mipita_yy.regionalizar()
+A_yy = mipita_yy.A
+
+A_xy = A_br.subtract(A_yy)
+A_yx = A_br.subtract(A_xx)
+
+A_x = pd.concat([A_xx, A_xy], axis=1) 
+A_y = pd.concat([A_yx, A_yy], axis=1)
+nomes = nereus.codigos + [i+'_' for i in nereus.codigos]
+A_intreg = pd.concat([A_x, A_y], axis=0)
+A_intreg.index = nomes
+A_intreg.columns = nomes
+
+
+L_intreg = matriz.matriz_leontief(A_intreg)
+
+
+"""
+---
+"""
+
+st.title('Modelo interregional')  
+with st.expander("Veja nota informativa do atributo ajuste:"):
+     st.markdown("""O modelo interregional (modelo de Isard) consiste 
+                 na expansão da matriz insumo-produto nacional de modo 
+                 a identificar não apenas os fluxos intersetoriais, 
+                 mas também os fluxos interregionais.
+                 Desse modo, um modelo para N regiões irá expandir 
+                 a matriz exponencialmente""")
+
+csv = convert_df(A_xx)
+st.download_button("Press to Download Matriz A_xx", 
+                         csv,"A_xx.csv", 
+                         "text/csv", 
+                         key='download-csv')
+
+
+csv = convert_df(A_yy)
+st.download_button("Press to Download Matriz A_yy", 
+                         csv,"A_yy.csv", 
+                         "text/csv", 
+                         key='download-csv')
+
+
+csv = convert_df(A_xy)
+st.download_button("Press to Download Matriz A_xy", 
+                         csv,"A_xy.csv", 
+                         "text/csv", 
+                         key='download-csv')
+
+
+csv = convert_df(A_yx)
+st.download_button("Press to Download Matriz A_yx", 
+                         csv,"A_yx.csv", 
+                         "text/csv", 
+                         key='download-csv')
+
+
+csv = convert_df(A_intreg)
+st.download_button("Press to Download Matriz A_intreg", 
+                         csv,"A_intreg.csv", 
+                         "text/csv", 
+                         key='download-csv')
+
+csv = convert_df(L_intreg)
+st.download_button("Press to Download Matriz A_intreg", 
+                         csv,"L_intreg.csv", 
+                         "text/csv", 
+                         key='download-csv')
+
+"""🥈 **O município comprou**:""" 
+st.write(sum(mipita_xx.comprou))
+
+
+"""🥈 **O município vendeu**:"""
+st.write(sum(mipita_yy.vendeu))
+
+
+"""↗️ **Um aumento de 1 unidade na agricultura de Brasil 
+gera aumento na agricultura do município de**:"""
+st.write(L_intreg.at['0191', '0191_'])
+
+"""↗️ **Um aumento de 1 na agricultura município gera 
+aumento na agricultura do Brasil de**:"""
+L_intreg.at['0191_', '0191'] 
 
 
