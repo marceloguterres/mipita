@@ -139,9 +139,6 @@ st.download_button("Press to Download multiplicadores TA",
 
 st.subheader('🎯 Cálculo do impacto econômico') 
 
-
-code_municipio     
-
 st.markdown("""Use o menu de inputs para indicar a taxa de variação da demanda 
 por Transporte Aéreo""")
 
@@ -151,7 +148,7 @@ por Transporte Aéreo""")
 """
 
 
-with st.expander("Veja nota informativa sobre os multiplicadores:"):
+with st.expander("Veja nota informativa sobre os multiplicadores: 👉"):
      st.markdown("""Os multiplicadoes são medidas sintéticas obtidas da Matriz 
 L e da Matriz L fechada (que modela os impactos diretos+indiretos+induzidos ao 
 incorporar o trabalho como mais um setor produtivo;
@@ -180,7 +177,7 @@ st.write(demanda_ta_br)
 🎯 **Impactos estimados pelos multiplicadores:**
 """
 
-with st.expander("Veja nota informativa dos impactos estimados pelos multiplicadores:"):
+with st.expander("Veja nota informativa dos impactos estimados pelos multiplicadores: 👉"):
      st.markdown("""Referem-se à alteração de 1 unidade na demanda agregada total
 para encontrar os efeitos no conjunto da economia basta multiplicar pela 
 quantidade de unidades perdidas ou ganhas nessa demanda.""")
@@ -209,7 +206,7 @@ fornecedores_xx = mipita_xx.fornecedores(j='5100', q=10)
                      
 st.title('Regionalização da MIP')  
 
-with st.expander("Veja nota informativa do processo de Regionalização:"):
+with st.expander("Veja nota informativa do processo de Regionalização: 👉"):
      st.markdown("""A matriz de insumo-produtos é um modelo estrutural de uma economia, 
 ela retrata o total das transações entre os setores intermediários durante
 o período de um ano, medidas pelo valor transacionado.
@@ -251,7 +248,7 @@ st.download_button("Press to Download Matriz A REG",
 """
 📊 **Os coeficientes locacionais**:
 """
-with st.expander("Veja nota informativa dos coeficientes locacionais:"):
+with st.expander("Veja nota informativa dos coeficientes locacionais: 👉"):
      st.markdown("""O processo de regionalização envolver obter uma 
                  estimativa da estrutura produtiva de região alvo.
                  Esta estimativa pode ser feita a partir da seguinte pergunta:
@@ -269,7 +266,7 @@ st.table(qL)
 🔍 **O atributo propT**:
 """
 
-with st.expander("Veja nota informativa do atributo propT:"):
+with st.expander("Veja nota informativa do atributo propT: 👉"):
      st.markdown("""Enquanto o coeficiente locacional estima as proporções
                  do lado das atividades de produção o atributo .propT 
                  será empregado para estimar as colunas relacionadas à 
@@ -294,7 +291,7 @@ st.table(fornecedores_xx)
 """
 ⛳ **'O atributo ajuste**:
 """
-with st.expander("Veja nota informativa do atributo ajuste:"):
+with st.expander("Veja nota informativa do atributo ajuste: 👉"):
      st.markdown("""O atributo ajuste contém os parâmetros resultantes 
 da avaliação da qualidade do ajuste. A partir da MIP 
 é possível estimar o PIB municipal e seus componentes.
@@ -343,7 +340,7 @@ L_intreg = matriz.matriz_leontief(A_intreg)
 """
 
 st.title('Modelo interregional')  
-with st.expander("Veja nota informativa do atributo ajuste:"):
+with st.expander("Veja nota informativa do atributo ajuste: 👉"):
      st.markdown("""O modelo interregional (modelo de Isard) consiste 
                  na expansão da matriz insumo-produto nacional de modo 
                  a identificar não apenas os fluxos intersetoriais, 
