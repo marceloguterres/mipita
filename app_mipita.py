@@ -82,23 +82,7 @@ impactos_ta_br = multiplicadores_br['5100'] * demanda_ta_br  * tx_demanda_ta * 1
 
 
 
-#=============================================================================
-# Análise Insumo Produto Regionalizada (xx)
-#=============================================================================
 
-
-
-mipita_xx = nereus.extrair_mipita()   # o objeto Mipita é extraído do objeto Nereus, para cada região você começa aqui criando uma nova instância do objeto Mipita
-mipita_xx.preparar_qL([code_municipio])  # os parâmetros não definidos assumem os valores padrão
-qL = mipita_xx.qL                
-propT = mipita_xx.propT                  # atributo .propT será empregado para estimar as colunas relacionadas à demanda final.
-mipita_xx.regionalizar() 
-A_xx = mipita_xx.A                      
-mipreg_xx = mipita_xx.mipreg             
-ajuste_xx = mipita_xx.ajuste
-compradores_xx  = mipita_xx.compradores(i='5100') 
-fornecedores_xx = mipita_xx.fornecedores(j='5100', q=10)
-                                         
                                          
 
 #=============================================================================
@@ -191,7 +175,6 @@ st.write("R$ milhões/ano")
 st.write(demanda_ta_br)
 
 
-
 st.subheader('Impactos estimados pelos multiplicadores:')
 with st.expander("Veja nota informativa dos impactos estimados pelos multiplicadores:"):
      st.markdown("""Referem-se à alteração de 1 unidade na demanda agregada total
@@ -201,8 +184,21 @@ st.table(impactos_ta_br)
 
 
 #=============================================================================
-# Resultados da regionalização da matriz de insumo-produtos brasileira
+# Análise Insumo Produto Regionalizada (xx)
 #=============================================================================
+
+mipita_xx = nereus.extrair_mipita()   # o objeto Mipita é extraído do objeto Nereus, para cada região você começa aqui criando uma nova instância do objeto Mipita
+mipita_xx.preparar_qL([code_municipio])  # os parâmetros não definidos assumem os valores padrão
+qL = mipita_xx.qL                
+propT = mipita_xx.propT                  # atributo .propT será empregado para estimar as colunas relacionadas à demanda final.
+mipita_xx.regionalizar() 
+A_xx = mipita_xx.A                      
+mipreg_xx = mipita_xx.mipreg             
+ajuste_xx = mipita_xx.ajuste
+compradores_xx  = mipita_xx.compradores(i='5100') 
+fornecedores_xx = mipita_xx.fornecedores(j='5100', q=10)
+                                         
+
 
 st.title('Regionalização da MIP')   
 
@@ -226,12 +222,33 @@ nesaa estrutura a partir de choques de demanda. O modelo de região única não
  da modelagem..""")
 
 st.subheader('Os coeficientes locacionais:')
+with st.expander("Veja nota informativa dos coeficientes locacionais:"):
+     st.markdown("""O processo de regionalização envolver obter uma 
+                 estimativa da estrutura produtiva de região alvo.
+                 Esta estimativa pode ser feita a partir da seguinte pergunta:
+                   
+                "Quanto de cada atividade econômica é realizada no território alvo"?
+                
+O coeficiente locacional fornece essa medida. Conceitualmente ele
+fornece a proporção, variando de 0 a 1, de quanto uma determinada 
+atividade econômica acontece em um determinado território com 
+relação ao todo nacional.""")
 st.table(qL)
 
 
+st.subheader('O atributo propT:')
+with st.expander("Veja nota informativa do atributo propT:"):
+     st.markdown("""Enquanto o coeficiente locacional estima as proporções
+                 do lado das atividades de produção o atributo .propT 
+                 será empregado para estimar as colunas relacionadas à 
+                 demanda final.""")
+st.write(propT)
 
+st.subheader('Principais compradores do setor 5100:')
+st.table(compradores_xx)
 
-
+st.subheader('Principais forncedores do setor 5100:')
+st.table(fornecedores_xx)
 
 
 
