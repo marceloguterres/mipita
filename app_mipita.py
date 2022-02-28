@@ -54,7 +54,7 @@ with st.sidebar:
     code_municipio= st.text_input('Código IBGE do Município?')
         
     st.sidebar.markdown('## MIPITA')
-    tx_demanda_ta = st.number_input('Variaao da demanda?')
+    tx_demanda_ta = st.number_input('Varição da demanda?')
 
 
 
@@ -72,8 +72,10 @@ Lf_br     = nereus.Lf
 multiplicadores_br    = nereus.multiplicadores 
 multiplicadores_ta_br = nereus.multiplicadores['5100'] 
 
-demanda_br = nereus.mipita.loc['5100']['total_produtos']
-demanda_ta = multiplicadores_br * demanda_br * tx_demanda_ta * 1
+demanda_ta_br = nereus.mipita.loc['5100']['total_produtos']
+impactos_ta_br = multiplicadores_br['5100'] * demanda_ta_br  * tx_demanda_ta * 1
+
+
 
 
 csv = convert_df(mipita_br)
@@ -121,18 +123,51 @@ st.download_button("Press to Download multiplicadores TA",
                    "text/csv", 
                    key='download-csv')
 
-st.title('Cálculo de impacto econômico')      
+
+#=============================================================================
+# Cálculo de impacto econômico
+#=============================================================================
+
+
+st.title('Cálculo do impacto econômico')      
 
 st.markdown("""Use o menu de inputs para indicar a taxa de variação da demanda 
- por Transporte Aéreo""")
+por Transporte Aéreo""")
 
 
 st.subheader('Multiplicadores Transporte Aéreo BR:')
+with st.expander("Veja nota informativa sobre os multiplicadores:"):
+     st.markdown("""Os multiplicadoes são medidas sintéticas obtidas da Matriz 
+L e da Matriz L fechada (que modela os impactos diretos+indiretos+induzidos ao 
+incorporar o trabalho como mais um setor produtivo;
+
+-e: efeito a partir de um acréscimo de 1 unidade na demanda;
+
+-m: multiplicador sobre a própria unidade (Tipo 1 e Tipo 2), ex sobre acréscimo de 1 unidade de emprego;
+
+-D: direto;
+
+-N: indireto; 
+ 
+-Z: induzido;
+
+-Z+ induzido plus (sobrestimado por incorporar também o efeito-renda sobre os salários""")
+     
 st.table(multiplicadores_ta_br)
 
 
-st.subheader('Variação na Demanda por Transporte Aéreo no Brasil:')
-st.write(demanda_br)
+st.subheader('Valor total da demanda por transporte aéreo:')
+st.write("R$ milhões/ano")
+st.write(demanda_ta_br)
+
+
+
+st.subheader('Impactos estimados pelos multiplicadores:')
+with st.expander("Veja nota informativa dos impactos estimados pelos multiplicadores:"):
+     st.markdown("""Referem-se à alteração de 1 unidade na demanda agregada total
+para encontrar os efeitos no conjunto da economia basta multiplicar pela 
+quantidade de unidades perdidas ou ganhas nessa demanda.""")
+st.table(impactos_ta_br)
 
 
 
