@@ -197,9 +197,8 @@ mipreg_xx = mipita_xx.mipreg
 ajuste_xx = mipita_xx.ajuste
 compradores_xx  = mipita_xx.compradores(i='5100') 
 fornecedores_xx = mipita_xx.fornecedores(j='5100', q=10)
-                                         
-
-
+           
+                          
 st.title('Regionalização da MIP')   
 
 with st.expander("Veja nota informativa do processo de Regionalização:"):
@@ -220,6 +219,22 @@ nesaa estrutura a partir de choques de demanda. O modelo de região única não
  mesmo que existam, são ignorados. O modelo regional simples funciona, assim, 
  como um building bloc para os passos subsequentes de sofisticação 
  da modelagem..""")
+
+
+csv = convert_df(A_xx)
+st.download_button("Press to Download Matriz MIPITA REG", 
+                         csv,"mipreg_xx.csv", 
+                         "text/csv", 
+                         key='download-csv')
+     
+            
+csv = convert_df(A_xx)
+st.download_button("Press to Download Matriz A REG", 
+                   csv,"A_xx.csv", 
+                   "text/csv", 
+                   key='download-csv')
+
+
 
 st.subheader('Os coeficientes locacionais:')
 with st.expander("Veja nota informativa dos coeficientes locacionais:"):
@@ -251,8 +266,22 @@ st.subheader('Principais forncedores do setor 5100:')
 st.table(fornecedores_xx)
 
 
+st.subheader('O atributo ajuste:')
+with st.expander("Veja nota informativa do atributo ajuste:"):
+     st.markdown("""O atributo ajuste contém os parâmetros resultantes 
+da avaliação da qualidade do ajuste. A partir da MIP 
+é possível estimar o PIB municipal e seus componentes.
 
+A avaliação consiste na comparação deste PIB estimado via MIP municipal 
+e o PIB municipal divulgado oficialmente pelo IBGE e também informa a 
+participação relativa de agricultura, indústrias e serviços (que inclui adm 
+pública) no PIB local. 
 
+O arquivo baixado durante o processamento contém o dicionário para
+compatibizar as 68 atividades da MIP com esses 3 setores.""")
+
+#st.table(pd.DataFrame([ajuste_xx]))
+st.write(ajuste_xx)
 
 
 
