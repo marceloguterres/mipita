@@ -63,6 +63,7 @@ with st.sidebar:
 # Análise Insumo Produto Nacional br
 #=============================================================================
 
+
 nereus = matriz.Nereus(ano)  #carrega módulo matriz e puxa dados na S3 para a MIP 2015
 mipita_br = nereus.mipita
 A_br      = nereus.A
@@ -403,5 +404,73 @@ st.write(L_intreg.at['0191', '0191_'])
 """↗️ **Um aumento de 1 na agricultura município gera 
 aumento na agricultura do Brasil de**:"""
 L_intreg.at['0191_', '0191'] 
+
+
+"""
+---
+"""
+
+#=============================================================================
+# Desagregação setorial da MIP
+#=============================================================================
+
+st.title('Modelo de desagregação setorial da MIP')  
+
+with st.expander("Veja nota informativa da desagregação setorial da MIP: 👉"):
+     st.markdown("""**Descrição do problema:** A MIP é publicada com uma desagregação
+                 setorial máxima de 68 setores,a partir da qual impactos, 
+                 multiplicadores e outros indicadores podem
+                 ser calculados. 
+                 
+*É possível desagregar um ou mais setores ainda mais? Sob quais hipóteses? 
+Quais métodos podem ser usados para desagregar?
+Uma vez desagregado um setor, como fica a interpretação dos 
+impactos, multiplicadores e outros indicadores?*
+                 
+**✏️ H1**. É possível usar informações da RAIS para estimar a proporção
+de cada classe CNAE na formação de cada atividade agregada 
+na MIP;
+                 
+                           
+**✏️ H2**. As classes que formam cada atividade possuem coeficientes
+técnicos muito similares, especialmente no que se refere à 
+proporção de gastos com pessoal. Portanto, supor que são iguais 
+é uma aproximação razoável.
+                 
+                 """)
+
+"""
+📤 Download dos dados RAIS para 68 atividades agregadas para o Brasil e 
+para 673 classes agregados para o Brasil
+
+"""
+ano_str = str(ano)
+
+url = "https://econodata.s3.amazonaws.com/"
+
+# para 68 atividades agregadas para o Brasil
+_br68 = "RAIS/"+ano_str+"/Brasil68ano"+ano_str+".csv"
+br68 = pd.read_csv(url+_br68, dtype={'Atividades_68':str}, index_col=0)
+
+# para 673 classes agregados para o Brasil
+_br673 = "RAIS/"+ano_str+"/Brasil673ano"+ano_str+".csv"
+br673 = pd.read_csv(url+_br673, dtype={'Classe CNAE':str}, index_col=0)
+
+
+csv = convert_df(br68)
+st.download_button("Press to Download Matriz br68", 
+                         csv,"br68.csv", 
+                         "text/csv", 
+                         key='download-csv')
+
+
+csv = convert_df(br673)
+st.download_button("Press to Download Matriz br673", 
+                         csv,"br673.csv", 
+                         "text/csv", 
+                         key='download-csv')
+
+
+
 
 
