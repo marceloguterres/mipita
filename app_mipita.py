@@ -19,13 +19,9 @@ from auxdata import *
 import streamlit as st
 
 
+list_codes  = pd.read_csv('codes_municipios.csv', sep=';', encoding='latin-1').astype(str)
+list_br     = ['multiplicadores_br', 'multiplicadores_ta_br' ]
 
-#ano = '2015'
-#code_municipio = "354990"
-
-
-list_br = ['multiplicadores_br', 'multiplicadores_ta_br' ]
-list_codes = ['354990']
 
 
 def table_br(parametro_br):
@@ -53,11 +49,11 @@ with st.sidebar:
     
     st.info("🎈**VERSÃO:** 2022.27.02 - [ITA](https://www.ita.br)" )
     st.sidebar.header('Seleção dos parâmetros') 
-   
-    ano = st.sidebar.slider('Ano', 2010, 2021, 2015)  # min, max, default
-    code_municipio  = st.selectbox('Código IBGE do Município?', list_codes)
+    
+    ano             = st.sidebar.slider('Ano', 2010, 2021, 2015)  # min, max, default
+    code_municipio  = st.selectbox('Código IBGE do Município?', list_codes, index= 3826)
 
-        
+
     st.sidebar.markdown('## MIPITA')
     tx_demanda_ta = st.number_input('Varição da demanda?')
 
@@ -81,9 +77,7 @@ demanda_ta_br = nereus.mipita.loc['5100']['total_produtos']
 impactos_ta_br = multiplicadores_br['5100'] * demanda_ta_br  * tx_demanda_ta * 1
 
 
-
-
-                                         
+                                        
 
 #=============================================================================
 # csvs
@@ -143,7 +137,10 @@ st.download_button("Press to Download multiplicadores TA",
 #=============================================================================
 
 
-st.subheader('🎯 Cálculo do impacto econômico')      
+st.subheader('🎯 Cálculo do impacto econômico') 
+
+
+code_municipio     
 
 st.markdown("""Use o menu de inputs para indicar a taxa de variação da demanda 
 por Transporte Aéreo""")
@@ -207,8 +204,10 @@ ajuste_xx = mipita_xx.ajuste
 compradores_xx  = mipita_xx.compradores(i='5100') 
 fornecedores_xx = mipita_xx.fornecedores(j='5100', q=10)
            
-                          
-st.title('Regionalização da MIP')   
+     
+
+                     
+st.title('Regionalização da MIP')  
 
 with st.expander("Veja nota informativa do processo de Regionalização:"):
      st.markdown("""A matriz de insumo-produtos é um modelo estrutural de uma economia, 
@@ -228,6 +227,11 @@ nesaa estrutura a partir de choques de demanda. O modelo de região única não
  mesmo que existam, são ignorados. O modelo regional simples funciona, assim, 
  como um building bloc para os passos subsequentes de sofisticação 
  da modelagem..""")
+ 
+"""
+🆔 **Município selecionado**:
+"""
+st.table(list_codes.loc[list_codes['code'] == code_municipio])
 
 
 csv = convert_df(A_xx)
