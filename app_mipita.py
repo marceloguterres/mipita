@@ -20,8 +20,8 @@ import streamlit as st
 
 
 
-ano = '2015'
-code_municipio = "354990"
+#ano = '2015'
+#code_municipio = "354990"
 
 
 list_br = ['multiplicadores_br', 'multiplicadores_ta_br' ]
@@ -55,7 +55,7 @@ with st.sidebar:
     st.sidebar.header('Seleção dos parâmetros') 
    
     ano = st.sidebar.slider('Ano', 2010, 2021, 2015)  # min, max, default
-    #code_municipio  = st.selectbox('Código IBGE do Município?', list_codes)
+    code_municipio  = st.selectbox('Código IBGE do Município?', list_codes)
 
         
     st.sidebar.markdown('## MIPITA')
