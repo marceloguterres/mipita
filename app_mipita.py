@@ -5,7 +5,7 @@ Spyder Editor
 @author: guterres
 
 """
-
+#-----------------------------------------------------------------------------------
 # Bibliotecas Python
 import numpy as np
 import pandas as pd
@@ -20,11 +20,9 @@ from auxrais import *
 from auxdata import *
 import streamlit as st
 
-
-list_codes  = pd.read_csv('codes_municipios.csv', sep=';', encoding='latin-1').astype(str)
-list_br     = ['multiplicadores_br', 'multiplicadores_ta_br' ]
-
-
+#=============================================================================
+# Funçoes
+#=============================================================================
 
 def table_br(parametro_br):
     if parametro_br == 'multiplicadores_br':
@@ -33,17 +31,28 @@ def table_br(parametro_br):
         table = multiplicadores_ta_br
     return table
 
+
 @st.cache
 def convert_df(df):
    return df.to_csv().encode('utf-8')
 
 
-#-----------------------------------------------------------------------------------
-# -- Set page config
+#=============================================================================
+# Listas definidas
+#=============================================================================
 
+
+list_codes  = pd.read_csv('codes_municipios.csv', sep=';', encoding='latin-1').astype(str)
+list_br     = ['multiplicadores_br', 'multiplicadores_ta_br' ]
+
+
+
+#=============================================================================
+# Set page config
+#=============================================================================
 st.apptitle = 'Projeto IMPACTO'
 
-st.title('🎯 Análise MIP BR')
+st.title('🔍 Análise Insumo Produto')
 
 
 with st.expander("Veja nota informativa sobre os multiplicadores: 👉"):
@@ -64,11 +73,13 @@ incorporar o trabalho como mais um setor produtivo;
 -Z+ induzido plus (sobrestimado por incorporar também o efeito-renda sobre os salários""")
                    
 
-#-----------------------------------------------------------------------------------
-
+#=============================================================================
+# Configurção sidebar
+#=============================================================================
 with st.sidebar:
     
-    st.info("🎈**VERSÃO:** 2022.27.02 - [ITA](https://www.ita.br)" )
+    st.title('🎯 Projeto Impacto')
+    st.info("🎈**VERSÃO:** 2022.01.03 - [ITA](https://www.ita.br)" )
     st.sidebar.header('Seleção dos parâmetros') 
     
     ano             = st.sidebar.slider('Ano', 2010, 2017, 2017)  # min, max, default    
@@ -76,14 +87,13 @@ with st.sidebar:
     tx_demanda_setor= st.number_input('Varição da demanda do setor selecionado?')   
     code_setor      = st.text_input('Código do setor?', '5100')
     metrica         = st.text_input('Métrica?',  'Valor do Trabalho (R$ nom)')
-
+    classe          = st.text_input('classe?',  '5111')
     ano_str = str(ano)
     
     
 #=============================================================================
 # Análise Insumo Produto Nacional br
 #=============================================================================
-
 
 nereus = matriz.Nereus(ano)  #carrega módulo matriz e puxa dados na S3 para a MIP 2015
 mipita_br = nereus.mipita
@@ -98,16 +108,121 @@ multiplicadores_setor_br = nereus.multiplicadores[code_setor]
 demanda_setor_br = nereus.mipita.loc[code_setor]['total_produtos']
 impactos_setor_br = multiplicadores_br[code_setor] * demanda_setor_br  * tx_demanda_setor * 1
 
+                                       
+#=============================================================================
+# Análise Insumo Produto Regionalizada (xx)
+#=============================================================================
 
-                                        
+mipita_xx = nereus.extrair_mipita()   
+mipita_xx.preparar_qL([code_municipio]) 
+qL = mipita_xx.qL                
+propT = mipita_xx.propT                  
+mipita_xx.regionalizar() 
+A_xx = mipita_xx.A                      
+mipreg_xx = mipita_xx.mipreg             
+ajuste_xx = mipita_xx.ajuste
+compradores_xx  = mipita_xx.compradores(i=code_setor) 
+fornecedores_xx = mipita_xx.fornecedores(j=code_setor, q=10)
+
+           
+#=============================================================================
+# Modelo simplificado para entender e estudar o comportamento do modelo 
+# interregional de ISARD (yy)
+# A matriz A_yy é a matriz Brasil menos a regionalizada para xx
+#=============================================================================
+
+mipita_yy = nereus.extrair_mipita()
+mipita_yy.preparar_qL([code_municipio], exceto=True) 
+mipita_yy.regionalizar()
+A_yy = mipita_yy.A
+
+A_xy = A_br.subtract(A_yy)
+A_yx = A_br.subtract(A_xx)
+
+A_x = pd.concat([A_xx, A_xy], axis=1) 
+A_y = pd.concat([A_yx, A_yy], axis=1)
+nomes = nereus.codigos + [i+'_' for i in nereus.codigos]
+A_intreg = pd.concat([A_x, A_y], axis=0)
+A_intreg.index = nomes
+A_intreg.columns = nomes
+L_intreg = matriz.matriz_leontief(A_intreg)
 
 #=============================================================================
-# csvs
+# Desagregação setorial da MIP
+#=============================================================================
+
+url = "https://econodata.s3.amazonaws.com/"
+
+# para 68 atividades agregadas para o Brasil
+_br68 = "RAIS/"+ano_str+"/Brasil68ano"+ano_str+".csv"
+br68 = pd.read_csv(url+_br68, dtype={'Atividades_68':str}, index_col=0)
+
+
+# para 673 classes agregados para o Brasil
+_br673 = "RAIS/"+ano_str+"/Brasil673ano"+ano_str+".csv"
+br673 = pd.read_csv(url+_br673, dtype={'Classe CNAE':str}, index_col=0)
+
+
+res = "Classificas/compatibiliza673a68.json"
+compa = json.loads(requests.get(url+res).text)
+
+aereo = [s['classes'] for s in compa if s['atividade'] == code_setor][0]
+
+# dados RAIS para a atividade 5100 
+raisA = br68[br68['Atividades_68'] ==  code_setor]
+
+br673.index = [a[0:4] for a in br673['Classe CNAE']]  # precisa arrumar o index para ficar compatível (4 dígitos)
+raisB = br673.loc[aereo]
+
+metrica = 'Valor do Trabalho (R$ nom)'  
+total_atividade = raisA[metrica].values[0]
+prop = raisB[metrica] / total_atividade
+
+colunas = {}
+for classe in aereo:
+  colunas[classe+'c'] = nereus.A[code_setor]
+
+df = pd.DataFrame(colunas)
+Atemp = pd.concat([nereus.A, df], axis=1)  
+Atemp = Atemp.drop(columns=[code_setor])
+
+
+linhas = {}
+for classe in aereo:
+  linhas[classe+'c'] = nereus.A.loc[code_setor] * prop[classe]   
+
+
+df2 = pd.DataFrame(linhas).T       
+df2 = df2.drop(columns=[code_setor])   
+
+Atemp2 = pd.concat([Atemp, df2], axis=0)
+
+
+miolo = {}
+for classe in aereo:
+  miolo[classe+'c'] = Atemp2.at[code_setor, classe+'c'] * prop
+
+df3 = pd.DataFrame(miolo)
+df3.index=[classe+'c' for classe in aereo]
+
+novos = [classe+'c' for classe in aereo]
+Atemp2.loc[novos, novos] = df3  
+
+
+Ad = Atemp2.drop(code_setor)
+Ld = matriz.matriz_leontief(Ad)   # método que está no objeto matriz e calcula a inv(I-A)
+
+
+
+#=============================================================================
+# Interface Análise Insumo Produto Nacional br
 #=============================================================================
 
 """
-**Resultados do processamento da Metodologia Impacto**
+---
 """
+
+st.title('🎯 Resultados MIP Brasil')
 
 csv = convert_df(mipita_br)
 st.download_button("Press to Download Matriz MIPITA BR", 
@@ -156,7 +271,6 @@ st.download_button("Press to Download multiplicadores setor",
 
 
 
-
 #=============================================================================
 # resultados br
 #=============================================================================
@@ -165,28 +279,26 @@ st.download_button("Press to Download multiplicadores setor",
 ---
 """
 
-st.subheader('🎯 Cálculo do impacto econômico Brasil') 
+st.title('🎯 Cálculo do impacto econômico Brasil') 
 
                    
 """
-**Valor total da demanda do setor selecionado** (R$ milhões/ano): 
+**Valor total da demanda Brasil do setor selecionado** (R$ milhões/ano): 
     
 """
 st.write(demanda_setor_br)   
 
 
 """
-
-**Multiplicadores do setor selecionado para o Brasil:**
+**Multiplicadores para o Brasil do setor selecionado para análise:**
 
 """
 st.table(multiplicadores_setor_br)
 
 
 """
-
-**Impactos estimados pelos multiplicadores devido a uma 
-variação da demanda do setor selecionado:**
+**Impactos estimados pelos multiplicadores Brasil devido a uma 
+variação na demanda nacional do setor selecionado:**
 
 """
 
@@ -199,23 +311,10 @@ st.table(impactos_setor_br)
 """
 ---
 """
-#=============================================================================
-# Análise Insumo Produto Regionalizada (xx)
-#=============================================================================
-
-mipita_xx = nereus.extrair_mipita()   # o objeto Mipita é extraído do objeto Nereus, para cada região você começa aqui criando uma nova instância do objeto Mipita
-mipita_xx.preparar_qL([code_municipio])  # os parâmetros não definidos assumem os valores padrão
-qL = mipita_xx.qL                
-propT = mipita_xx.propT                  # atributo .propT será empregado para estimar as colunas relacionadas à demanda final.
-mipita_xx.regionalizar() 
-A_xx = mipita_xx.A                      
-mipreg_xx = mipita_xx.mipreg             
-ajuste_xx = mipita_xx.ajuste
-compradores_xx  = mipita_xx.compradores(i=code_setor) 
-fornecedores_xx = mipita_xx.fornecedores(j=code_setor, q=10)
-           
      
-
+#=============================================================================
+# resultados Regionalização da MIP
+#=============================================================================
                      
 st.title('🎯 Regionalização da MIP')  
 
@@ -320,30 +419,6 @@ st.table(fornecedores_xx)
 #st.table(pd.DataFrame([ajuste_xx]))
 st.write(ajuste_xx)
 
-#=============================================================================
-# Modelo simplificado para entender e estudar o comportamento do modelo 
-# interregional de ISARD (yy)
-#=============================================================================
-# A matriz A_yy é a matriz Brasil menos a regionalizada para xx
-
-
-mipita_yy = nereus.extrair_mipita()
-mipita_yy.preparar_qL([code_municipio], exceto=True) 
-mipita_yy.regionalizar()
-A_yy = mipita_yy.A
-
-A_xy = A_br.subtract(A_yy)
-A_yx = A_br.subtract(A_xx)
-
-A_x = pd.concat([A_xx, A_xy], axis=1) 
-A_y = pd.concat([A_yx, A_yy], axis=1)
-nomes = nereus.codigos + [i+'_' for i in nereus.codigos]
-A_intreg = pd.concat([A_x, A_y], axis=0)
-A_intreg.index = nomes
-A_intreg.columns = nomes
-
-
-L_intreg = matriz.matriz_leontief(A_intreg)
 
 """
 ---
@@ -422,8 +497,11 @@ L_intreg.at['0191_', '0191']
 ---
 """
 
+
+
+
 #=============================================================================
-# Desagregação setorial da MIP
+# Inerface desagregação setorial da MIP
 #=============================================================================
 
 st.title('🎯 Modelo de desagregação setorial da MIP')  
@@ -447,27 +525,14 @@ na MIP;
 **✏️ H2**. As classes que formam cada atividade possuem coeficientes
 técnicos muito similares, especialmente no que se refere à 
 proporção de gastos com pessoal. Portanto, supor que são iguais 
-é uma aproximação razoável.
-                 
-                 """)
+é uma aproximação razoável. """)
 
 
 """
-**Download dos dados RAIS para 68 atividades agregadas para o Brasil e 
+**Dados RAIS para 68 atividades agregadas para o Brasil e 
 para 673 classes agregados para o Brasil.**
 
 """
-
-url = "https://econodata.s3.amazonaws.com/"
-
-# para 68 atividades agregadas para o Brasil
-_br68 = "RAIS/"+ano_str+"/Brasil68ano"+ano_str+".csv"
-br68 = pd.read_csv(url+_br68, dtype={'Atividades_68':str}, index_col=0)
-
-
-# para 673 classes agregados para o Brasil
-_br673 = "RAIS/"+ano_str+"/Brasil673ano"+ano_str+".csv"
-br673 = pd.read_csv(url+_br673, dtype={'Classe CNAE':str}, index_col=0)
 
 csv = convert_df(br68)
 st.download_button("Press to Download Matriz br68", 
@@ -482,20 +547,13 @@ st.download_button("Press to Download Matriz br673",
                          "text/csv", 
                          key='download-csv')
 
-res = "Classificas/compatibiliza673a68.json"
-compa = json.loads(requests.get(url+res).text)
-
-
 st.subheader("🔍 Operacional da H1")
-"""
-**Resultados do processamento do Modelo interregional**
-"""
 
 """
 **Para a atividade selecionada as classes compõem esta atividade são:**
 
 """
-aereo = [s['classes'] for s in compa if s['atividade'] == code_setor][0]
+
 st.table(aereo)
 
 """
@@ -503,35 +561,80 @@ st.table(aereo)
 de forma agregada.**
 """
 
-# dados RAIS para a atividade 5100 
-raisA = br68[br68['Atividades_68'] ==  code_setor]
 st.table(raisA)
-
-
 
 """
 **Na sequência a Tabela  mostra os dados RAIS com as classes
 que compõem atividade selecionada de forma desagregada.**
 
 """
-
-br673.index = [a[0:4] for a in br673['Classe CNAE']]  # precisa arrumar o index para ficar compatível (4 dígitos)
-raisB = br673.loc[aereo]
 st.table(raisB)
 
 """
 **Cálculo das proporções de cada classe dentro da atividade selecionada.
-Para tanto, definir a métrica a ser usada, i.e., o nome exato da coluna de dados.**
+Para tanto, definir a métrica a ser usada, isto é, o nome exato da coluna de dados.**
 """
 
-
-metrica = 'Valor do Trabalho (R$ nom)'  
-total_atividade = raisA[metrica].values[0]
-prop = raisB[metrica] / total_atividade
 st.table(prop)
 
+st.subheader("🔍 Operacional da H2")
+"""
+**Para avaliação da H2 devem ser estimados os coeficientes 
+técnicos da atividade analisada tendo como referência a
+matriz A do modelo Insumo Produto nacional.**
+
+"""
+st.table(A_br[code_setor]) 
 
 
+"""
+**Segundo a hipótese 2, os coeficientes técnicos dos setores 
+desagregados serão iguais aos da atividade agregada. Portanto, 
+para testar a H2 na sequênia são realizados vários cálculos 
+computacionais para obtenção da matriz Ad e Ld.**
+
+"""
+
+"""
+**📚 Ad é a matriz desagregada:**
+"""
+csv = convert_df(Ad)
+st.download_button("Press to Download Matriz Ad", 
+                         csv,"Ad.csv", 
+                         "text/csv", 
+                         key='download-csv')
+
+"""
+**📚 Ld é a matriz de Leontief desagregada:**
+"""
+
+csv = convert_df(Ld)
+st.download_button("Press to Download Matriz Ld", 
+                         csv,"Ld.csv", 
+                         "text/csv", 
+                         key='download-csv')
+
+st.subheader("🔍 Comparando A e Ad")
+
+"""
+**A soma dos coeficientes da matriz A no sentido das 
+linhas (i.e. soma dos valores de cada coluna) para o
+setor  que foi desagregado:***
+"""
+
+st.write(nereus.A.sum(axis=0)[code_setor])
 
 
+"""
+**Soma dos coeficientes da matriz Ad no sentido das linhas 
+(i.e. soma dos valores de cada coluna) :**
+"""
+st.table(Ad.sum(axis=0))
+         
+"""
+**Resultado: a soma dos coeficientes técnicos das novas
+colunas é igual à do setor original, a soma dos coef
+das outras colunas permanece inalterado.**
+"""
+         
 
