@@ -9,6 +9,8 @@ Spyder Editor
 # Bibliotecas Python
 import numpy as np
 import pandas as pd
+import requests
+import json
 
 # Bibliotecas Impacto
 import matriz
@@ -40,8 +42,27 @@ def convert_df(df):
 # -- Set page config
 
 st.apptitle = 'Projeto IMPACTO'
-st.title('Análise Insumo Produto Nacional')
 
+st.title('🎯 Análise MIP BR')
+
+
+with st.expander("Veja nota informativa sobre os multiplicadores: 👉"):
+     st.markdown("""Os multiplicadoes são medidas sintéticas obtidas da Matriz 
+L e da Matriz L fechada (que modela os impactos diretos+indiretos+induzidos ao 
+incorporar o trabalho como mais um setor produtivo;
+
+-e: efeito a partir de um acréscimo de 1 unidade na demanda;
+
+-m: multiplicador sobre a própria unidade (Tipo 1 e Tipo 2), ex sobre acréscimo de 1 unidade de emprego;
+
+-D: direto;
+
+-N: indireto; 
+ 
+-Z: induzido;
+
+-Z+ induzido plus (sobrestimado por incorporar também o efeito-renda sobre os salários""")
+                   
 
 #-----------------------------------------------------------------------------------
 
@@ -50,15 +71,15 @@ with st.sidebar:
     st.info("🎈**VERSÃO:** 2022.27.02 - [ITA](https://www.ita.br)" )
     st.sidebar.header('Seleção dos parâmetros') 
     
-    ano             = st.sidebar.slider('Ano', 2010, 2021, 2015)  # min, max, default
+    ano             = st.sidebar.slider('Ano', 2010, 2017, 2017)  # min, max, default    
     code_municipio  = st.selectbox('Código IBGE do Município?', list_codes, index= 3826)
+    tx_demanda_setor= st.number_input('Varição da demanda do setor selecionado?')   
+    code_setor      = st.text_input('Código do setor?', '5100')
+    metrica         = st.text_input('Métrica?',  'Valor do Trabalho (R$ nom)')
 
-
-    st.sidebar.markdown('## MIPITA')
-    tx_demanda_ta = st.number_input('Varição da demanda?')
-
-
-
+    ano_str = str(ano)
+    
+    
 #=============================================================================
 # Análise Insumo Produto Nacional br
 #=============================================================================
@@ -72,10 +93,10 @@ Af_br     = nereus.Af
 Lf_br     = nereus.Lf 
 
 multiplicadores_br    = nereus.multiplicadores 
-multiplicadores_ta_br = nereus.multiplicadores['5100'] 
+multiplicadores_setor_br = nereus.multiplicadores[code_setor] 
 
-demanda_ta_br = nereus.mipita.loc['5100']['total_produtos']
-impactos_ta_br = multiplicadores_br['5100'] * demanda_ta_br  * tx_demanda_ta * 1
+demanda_setor_br = nereus.mipita.loc[code_setor]['total_produtos']
+impactos_setor_br = multiplicadores_br[code_setor] * demanda_setor_br  * tx_demanda_setor * 1
 
 
                                         
@@ -84,7 +105,9 @@ impactos_ta_br = multiplicadores_br['5100'] * demanda_ta_br  * tx_demanda_ta * 1
 # csvs
 #=============================================================================
 
-
+"""
+**Resultados do processamento da Metodologia Impacto**
+"""
 
 csv = convert_df(mipita_br)
 st.download_button("Press to Download Matriz MIPITA BR", 
@@ -118,18 +141,19 @@ st.download_button("Press to Download Matriz Lf ",
                    key='download-csv')
 
 
-csv = convert_df(multiplicadores_br )
+csv = convert_df(multiplicadores_br)
 st.download_button("Press to Download multiplicadores br ", 
                    csv,"multiplicadores_br .csv", 
                    "text/csv", 
                    key='download-csv')
 
 
-csv = convert_df(multiplicadores_ta_br)
-st.download_button("Press to Download multiplicadores TA", 
-                   csv,"multiplicadores_ta_br.csv", 
+csv = convert_df(multiplicadores_setor_br)
+st.download_button("Press to Download multiplicadores setor", 
+                   csv,"multiplicadores_setor_br.csv", 
                    "text/csv", 
                    key='download-csv')
+
 
 
 
@@ -137,52 +161,40 @@ st.download_button("Press to Download multiplicadores TA",
 # resultados br
 #=============================================================================
 
+"""
+---
+"""
 
-st.subheader('🎯 Cálculo do impacto econômico') 
+st.subheader('🎯 Cálculo do impacto econômico Brasil') 
 
-st.markdown("""Use o menu de inputs para indicar a taxa de variação da demanda 
-por Transporte Aéreo""")
+                   
+"""
+**Valor total da demanda do setor selecionado** (R$ milhões/ano): 
+    
+"""
+st.write(demanda_setor_br)   
 
 
 """
-📊 **Multiplicadores Transporte Aéreo BR:**
-"""
 
-
-with st.expander("Veja nota informativa sobre os multiplicadores: 👉"):
-     st.markdown("""Os multiplicadoes são medidas sintéticas obtidas da Matriz 
-L e da Matriz L fechada (que modela os impactos diretos+indiretos+induzidos ao 
-incorporar o trabalho como mais um setor produtivo;
-
--e: efeito a partir de um acréscimo de 1 unidade na demanda;
-
--m: multiplicador sobre a própria unidade (Tipo 1 e Tipo 2), ex sobre acréscimo de 1 unidade de emprego;
-
--D: direto;
-
--N: indireto; 
- 
--Z: induzido;
-
--Z+ induzido plus (sobrestimado por incorporar também o efeito-renda sobre os salários""")
-     
-st.table(multiplicadores_ta_br)
+**Multiplicadores do setor selecionado para o Brasil:**
 
 """
-🎯 **Valor total da demanda por transporte aéreo** (R$ milhões/ano):
-"""
-st.write(demanda_ta_br)
+st.table(multiplicadores_setor_br)
 
 
 """
-🎯 **Impactos estimados pelos multiplicadores:**
+
+**Impactos estimados pelos multiplicadores devido a uma 
+variação da demanda do setor selecionado:**
+
 """
 
 with st.expander("Veja nota informativa dos impactos estimados pelos multiplicadores: 👉"):
      st.markdown("""Referem-se à alteração de 1 unidade na demanda agregada total
 para encontrar os efeitos no conjunto da economia basta multiplicar pela 
 quantidade de unidades perdidas ou ganhas nessa demanda.""")
-st.table(impactos_ta_br)
+st.table(impactos_setor_br)
 
 """
 ---
@@ -199,13 +211,13 @@ mipita_xx.regionalizar()
 A_xx = mipita_xx.A                      
 mipreg_xx = mipita_xx.mipreg             
 ajuste_xx = mipita_xx.ajuste
-compradores_xx  = mipita_xx.compradores(i='5100') 
-fornecedores_xx = mipita_xx.fornecedores(j='5100', q=10)
+compradores_xx  = mipita_xx.compradores(i=code_setor) 
+fornecedores_xx = mipita_xx.fornecedores(j=code_setor, q=10)
            
      
 
                      
-st.title('Regionalização da MIP')  
+st.title('🎯 Regionalização da MIP')  
 
 with st.expander("Veja nota informativa do processo de Regionalização: 👉"):
      st.markdown("""A matriz de insumo-produtos é um modelo estrutural de uma economia, 
@@ -226,29 +238,7 @@ nesaa estrutura a partir de choques de demanda. O modelo de região única não
  como um building bloc para os passos subsequentes de sofisticação 
  da modelagem..""")
  
-"""
-🆔 **Município selecionado**:
-"""
-st.table(list_codes.loc[list_codes['code'] == code_municipio])
-
-
-csv = convert_df(A_xx)
-st.download_button("Press to Download Matriz MIPITA REG", 
-                         csv,"mipreg_xx.csv", 
-                         "text/csv", 
-                         key='download-csv')
-     
-            
-csv = convert_df(A_xx)
-st.download_button("Press to Download Matriz A REG", 
-                   csv,"A_xx.csv", 
-                   "text/csv", 
-                   key='download-csv')
-
-
-"""
-📊 **Os coeficientes locacionais**:
-"""
+ 
 with st.expander("Veja nota informativa dos coeficientes locacionais: 👉"):
      st.markdown("""O processo de regionalização envolver obter uma 
                  estimativa da estrutura produtiva de região alvo.
@@ -260,38 +250,13 @@ O coeficiente locacional fornece essa medida. Conceitualmente ele
 fornece a proporção, variando de 0 a 1, de quanto uma determinada 
 atividade econômica acontece em um determinado território com 
 relação ao todo nacional.""")
-st.table(qL)
-
-
-"""
-🔍 **O atributo propT**:
-"""
 
 with st.expander("Veja nota informativa do atributo propT: 👉"):
      st.markdown("""Enquanto o coeficiente locacional estima as proporções
                  do lado das atividades de produção o atributo .propT 
                  será empregado para estimar as colunas relacionadas à 
                  demanda final.""")
-st.write(propT)
-
-
-
-
-"""
-👀 **Principais compradores do setor 5100**:
-"""
-st.table(compradores_xx)
-
-
-"""
-👀 **Principais forncedores do setor 5100**:
-"""
-st.table(fornecedores_xx)
-
-
-"""
-⛳ **'O atributo ajuste**:
-"""
+                 
 with st.expander("Veja nota informativa do atributo ajuste: 👉"):
      st.markdown("""O atributo ajuste contém os parâmetros resultantes 
 da avaliação da qualidade do ajuste. A partir da MIP 
@@ -303,12 +268,57 @@ participação relativa de agricultura, indústrias e serviços (que inclui adm
 pública) no PIB local. 
 
 O arquivo baixado durante o processamento contém o dicionário para
-compatibizar as 68 atividades da MIP com esses 3 setores.""")
+compatibizar as 68 atividades da MIP com esses 3 setores.""")                 
+                 
+ 
+
+"""
+**Município selecionado**:
+"""
+st.table(list_codes.loc[list_codes['code'] == code_municipio])
+
+csv = convert_df(A_xx)
+st.download_button("Press to Download Matriz MIPITA REG", 
+                         csv,"mipreg_xx.csv", 
+                         "text/csv", 
+                         key='download-csv')
+    
+            
+csv = convert_df(A_xx)
+st.download_button("Press to Download Matriz A REG", 
+                   csv,"A_xx.csv", 
+                   "text/csv", 
+                   key='download-csv')
+
+"""
+**Os coeficientes locacionais**:    
+"""
+st.table(qL)
+
+
+"""
+**O atributo propT**:   
+"""
+st.write(propT)
+
+"""
+**Principais compradores do setor selecionado**:
+"""
+st.table(compradores_xx)
+
+
+"""
+**Principais forncedores do setor**:
+"""
+st.table(fornecedores_xx)
+
+
+"""
+**'O atributo ajuste**:
+"""
 
 #st.table(pd.DataFrame([ajuste_xx]))
 st.write(ajuste_xx)
-
-
 
 #=============================================================================
 # Modelo simplificado para entender e estudar o comportamento do modelo 
@@ -335,19 +345,23 @@ A_intreg.columns = nomes
 
 L_intreg = matriz.matriz_leontief(A_intreg)
 
-
 """
 ---
 """
 
-st.title('Modelo interregional')  
-with st.expander("Veja nota informativa do atributo ajuste: 👉"):
+st.title('🎯 Modelo interregional') 
+
+with st.expander("Veja nota informativa do Modelo interregional: 👉"):
      st.markdown("""O modelo interregional (modelo de Isard) consiste 
                  na expansão da matriz insumo-produto nacional de modo 
                  a identificar não apenas os fluxos intersetoriais, 
                  mas também os fluxos interregionais.
                  Desse modo, um modelo para N regiões irá expandir 
                  a matriz exponencialmente""")
+
+"""
+**Resultados do processamento do Modelo interregional**
+"""
 
 csv = convert_df(A_xx)
 st.download_button("Press to Download Matriz A_xx", 
@@ -389,13 +403,12 @@ st.download_button("Press to Download Matriz A_intreg",
                          "text/csv", 
                          key='download-csv')
 
-"""🥈 **O município comprou**:""" 
+"""**O município comprou**:""" 
 st.write(sum(mipita_xx.comprou))
 
 
-"""🥈 **O município vendeu**:"""
+"""**O município vendeu**:"""
 st.write(sum(mipita_yy.vendeu))
-
 
 """↗️ **Um aumento de 1 unidade na agricultura de Brasil 
 gera aumento na agricultura do município de**:"""
@@ -405,7 +418,6 @@ st.write(L_intreg.at['0191', '0191_'])
 aumento na agricultura do Brasil de**:"""
 L_intreg.at['0191_', '0191'] 
 
-
 """
 ---
 """
@@ -414,7 +426,7 @@ L_intreg.at['0191_', '0191']
 # Desagregação setorial da MIP
 #=============================================================================
 
-st.title('Modelo de desagregação setorial da MIP')  
+st.title('🎯 Modelo de desagregação setorial da MIP')  
 
 with st.expander("Veja nota informativa da desagregação setorial da MIP: 👉"):
      st.markdown("""**Descrição do problema:** A MIP é publicada com uma desagregação
@@ -439,12 +451,12 @@ proporção de gastos com pessoal. Portanto, supor que são iguais
                  
                  """)
 
-"""
-📤 Download dos dados RAIS para 68 atividades agregadas para o Brasil e 
-para 673 classes agregados para o Brasil
 
 """
-ano_str = str(ano)
+**Download dos dados RAIS para 68 atividades agregadas para o Brasil e 
+para 673 classes agregados para o Brasil.**
+
+"""
 
 url = "https://econodata.s3.amazonaws.com/"
 
@@ -452,10 +464,10 @@ url = "https://econodata.s3.amazonaws.com/"
 _br68 = "RAIS/"+ano_str+"/Brasil68ano"+ano_str+".csv"
 br68 = pd.read_csv(url+_br68, dtype={'Atividades_68':str}, index_col=0)
 
+
 # para 673 classes agregados para o Brasil
 _br673 = "RAIS/"+ano_str+"/Brasil673ano"+ano_str+".csv"
 br673 = pd.read_csv(url+_br673, dtype={'Classe CNAE':str}, index_col=0)
-
 
 csv = convert_df(br68)
 st.download_button("Press to Download Matriz br68", 
@@ -469,6 +481,55 @@ st.download_button("Press to Download Matriz br673",
                          csv,"br673.csv", 
                          "text/csv", 
                          key='download-csv')
+
+res = "Classificas/compatibiliza673a68.json"
+compa = json.loads(requests.get(url+res).text)
+
+
+st.subheader("🔍 Operacional da H1")
+"""
+**Resultados do processamento do Modelo interregional**
+"""
+
+"""
+**Para a atividade selecionada as classes compõem esta atividade são:**
+
+"""
+aereo = [s['classes'] for s in compa if s['atividade'] == code_setor][0]
+st.table(aereo)
+
+"""
+**Em complemento a próxima Tabela  mostra os dados RAIS para atividade selecionada
+de forma agregada.**
+"""
+
+# dados RAIS para a atividade 5100 
+raisA = br68[br68['Atividades_68'] ==  code_setor]
+st.table(raisA)
+
+
+
+"""
+**Na sequência a Tabela  mostra os dados RAIS com as classes
+que compõem atividade selecionada de forma desagregada.**
+
+"""
+
+br673.index = [a[0:4] for a in br673['Classe CNAE']]  # precisa arrumar o index para ficar compatível (4 dígitos)
+raisB = br673.loc[aereo]
+st.table(raisB)
+
+"""
+**Cálculo das proporções de cada classe dentro da atividade selecionada.
+Para tanto, definir a métrica a ser usada, i.e., o nome exato da coluna de dados.**
+"""
+
+
+metrica = 'Valor do Trabalho (R$ nom)'  
+total_atividade = raisA[metrica].values[0]
+prop = raisB[metrica] / total_atividade
+st.table(prop)
+
 
 
 
