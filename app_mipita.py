@@ -124,6 +124,11 @@ ajuste_xx = mipita_xx.ajuste
 compradores_xx  = mipita_xx.compradores(i=code_setor) 
 fornecedores_xx = mipita_xx.fornecedores(j=code_setor, q=10)
 
+demanda_regional = mipreg_xx.loc[code_setor]['total_produtos']
+
+
+
+
            
 #=============================================================================
 # Modelo simplificado para entender e estudar o comportamento do modelo 
@@ -376,6 +381,14 @@ compatibizar as 68 atividades da MIP com esses 3 setores.""")
 """
 st.table(list_codes.loc[list_codes['code'] == code_municipio])
 
+
+"""
+**Demanda Regional**:
+"""
+st.write(demanda_regional)
+
+
+
 csv = convert_df(A_xx)
 st.download_button("Press to Download Matriz MIPITA REG", 
                          csv,"mipreg_xx.csv", 
@@ -389,10 +402,12 @@ st.download_button("Press to Download Matriz A REG",
                    "text/csv", 
                    key='download-csv')
 
-"""
-**Os coeficientes locacionais**:    
-"""
-st.table(qL)
+
+csv = convert_df(qL)
+st.download_button("Press to Download o vetor dos coeficientes locacionais", 
+                   csv,"qL.csv", 
+                   "text/csv", 
+                   key='download-csv')
 
 
 """
@@ -411,13 +426,15 @@ st.table(compradores_xx)
 """
 st.table(fornecedores_xx)
 
-
 """
 **'O atributo ajuste**:
 """
 
 #st.table(pd.DataFrame([ajuste_xx]))
 st.write(ajuste_xx)
+
+
+
 
 
 """
